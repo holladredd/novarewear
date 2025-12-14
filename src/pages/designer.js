@@ -15,27 +15,30 @@ export default function Designer() {
     setFabric(fabricInstance);
   }, []);
 
-  const handleSelectTemplate = (svgPath) => {
-    if (!canvas || !fabric) return;
+  const handleSelectTemplate = useCallback(
+    (svgPath) => {
+      if (!canvas || !fabric) return;
 
-    canvas.clear(); // Clear previous template
+      canvas.clear(); // Clear previous template
 
-    fabric.loadSVGFromURL(svgPath, (objects, options) => {
-      const obj = fabric.util.groupSVGElements(objects, options);
+      fabric.loadSVGFromURL(svgPath, (objects, options) => {
+        const obj = fabric.util.groupSVGElements(objects, options);
 
-      const canvasWidth = canvas.getWidth();
-      const canvasHeight = canvas.getHeight();
+        const canvasWidth = canvas.getWidth();
+        const canvasHeight = canvas.getHeight();
 
-      // Scale the object to fit the canvas while maintaining aspect ratio
-      const scale = Math.min(
-        canvasWidth / obj.width,
-        canvasHeight / obj.height
-      );
-      obj.scale(scale);
+        // Scale the object to fit the canvas while maintaining aspect ratio
+        const scale = Math.min(
+          canvasWidth / obj.width,
+          canvasHeight / obj.height
+        );
+        obj.scale(scale);
 
-      canvas.add(obj).centerObject(obj).renderAll();
-    });
-  };
+        canvas.add(obj).centerObject(obj).renderAll();
+      });
+    },
+    [canvas, fabric]
+  );
 
   return (
     <div className="flex flex-col h-screen">
@@ -43,7 +46,7 @@ export default function Designer() {
       <div className="flex-grow">
         <div className="grid grid-cols-12 h-full">
           {/* Left Column */}
-          <div className="col-span-2 bg-gray-100 p-4 overflow-y-auto">
+          <div className="col-span-2 bg-gray-100 p-1 overflow-y-auto">
             <TemplatePanel onSelectTemplate={handleSelectTemplate} />
             <LayersPanel canvas={canvas} />
           </div>
@@ -56,6 +59,7 @@ export default function Designer() {
           {/* Right Column */}
           <div className="col-span-3 bg-gray-100 p-4">
             <EditorToolbar canvas={canvas} fabric={fabric} />
+
             <ObjectPanel />
           </div>
         </div>

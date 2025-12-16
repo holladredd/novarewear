@@ -1,6 +1,7 @@
 import Image from "next/image";
+import AddImageButton from "./AddImageButton";
 
-export default function TemplatePanel({ onSelectTemplate }) {
+export default function TemplatePanel({ onSelectTemplate, setObjects }) {
   const templates = [
     {
       name: "Long Sleeve Hoodie",
@@ -25,23 +26,37 @@ export default function TemplatePanel({ onSelectTemplate }) {
   ];
 
   return (
-    <div className="p-4 bg-gray-100 rounded-lg">
-      <h3 className="text-lg font-semibold mb-4">Templates</h3>
-      <div className="grid grid-cols-2 gap-4 overflow-y-auto max-h-[200px]">
-        {templates.map((template) => (
+    <div className="p-4 bg-gray-100 text-gray-600 rounded-xl border border-gray-200 shadow-2xl">
+      <h3 className="text-lg font-semibold mb-4 tracking-wide">
+        Choose Template
+      </h3>
+
+      {/* sleek cards */}
+      <div className="grid grid-cols-2 gap-3 max-h-[240px] overflow-y-auto pr-1">
+        {templates.map((t) => (
           <div
-            key={template.name}
-            onClick={() => onSelectTemplate(template.path)}
-            className="border rounded-lg p-2 cursor-pointer hover:bg-gray-200"
-            title={template.name}
+            key={t.name}
+            onClick={() => onSelectTemplate(t.path)}
+            className="group relative rounded-xl overflow-hidden border border-gray-200 hover:border-blue-400 transition-all duration-300 transform hover:scale-[1.03] cursor-pointer"
           >
             <img
-              src={template.path}
-              alt={template.name}
-              className="w-full h-auto"
+              src={t.path}
+              alt={t.name}
+              className="w-full h-32 object-cover"
             />
+            <div className="absolute inset-0 bg-gradient-to-t from-gray-700 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <span className="absolute bottom-2 left-2 text-xs font-medium text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              {t.name}
+            </span>
           </div>
         ))}
+      </div>
+
+      {/* raster-only add button */}
+      <div className="mt-6 pt-4 border-t border-gray-800">
+        <AddImageButton
+          onImageAdd={(newImage) => setObjects((o) => [...o, newImage])}
+        />
       </div>
     </div>
   );

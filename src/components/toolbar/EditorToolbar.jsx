@@ -5,6 +5,7 @@ import {
   FaEraser,
   FaFont,
 } from "react-icons/fa";
+import { RiArrowUpDownFill } from "react-icons/ri";
 import { TOOLS } from "./tools";
 
 export default function EditorToolbar({
@@ -30,7 +31,7 @@ export default function EditorToolbar({
   return (
     <div className="flex flex-col gap-2 p-2 bg-gray-200 rounded">
       {toolBtn(TOOLS.SELECT, FaMousePointer)}
-      {toolBtn(TOOLS.MOVE, FaHandPaper)}
+      {toolBtn(TOOLS.MOVE, RiArrowUpDownFill)}
       {toolBtn(TOOLS.TEXT, FaFont)}
       {toolBtn(TOOLS.BRUSH, FaPaintBrush)} {/* mode only */}
       {toolBtn(TOOLS.ERASER, FaEraser)} {/* mode only */}

@@ -28,8 +28,7 @@ import { CSS } from "@dnd-kit/utilities";
 function LayerItem({
   obj,
   selectObject,
-  moveUp,
-  moveDown,
+  setObjects,
   toggleVisibility,
   toggleLock,
   deleteObject,
@@ -43,7 +42,23 @@ function LayerItem({
     transition,
     border: obj.id === activeId ? "2px solid #2563eb" : "1px solid transparent",
   };
+  // const bringForward = () =>
+  //   setObjects((o) => {
+  //     const idx = o.findIndex((x) => x.id === selectedId);
+  //     if (idx === -1 || idx === o.length - 1) return o;
+  //     const next = [...o];
+  //     [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
+  //     return next;
+  //   });
 
+  // const sendBackwards = () =>
+  //   setObjects((o) => {
+  //     const idx = o.findIndex((x) => x.id === selectedId);
+  //     if (idx <= 0) return o;
+  //     const next = [...o];
+  //     [next[idx], next[idx - 1]] = [next[idx - 1], next[idx]];
+  //     return next;
+  //   });
   return (
     <li
       ref={setNodeRef}
@@ -62,10 +77,10 @@ function LayerItem({
 
       {/* buttons – NO listeners */}
       <div className="flex space-x-1">
-        <button
+        {/* <button
           onClick={(e) => {
             e.stopPropagation();
-            moveUp(obj.id);
+            bringForward(obj.id);
           }}
           className="px-1 py-0.5 border rounded text-xs"
         >
@@ -74,12 +89,12 @@ function LayerItem({
         <button
           onClick={(e) => {
             e.stopPropagation();
-            moveDown(obj.id);
+            sendBackwards(obj.id);
           }}
           className="px-1 py-0.5 border rounded text-xs"
         >
           <FaArrowDown />
-        </button>
+        </button> */}
         <button
           onClick={(e) => {
             e.stopPropagation();

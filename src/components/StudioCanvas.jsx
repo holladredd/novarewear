@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { Stage, Layer, Transformer, Rect, Line } from "react-konva";
 import Navbar from "../components/Navbar";
 import EditorToolbar from "../components/toolbar/EditorToolbar";
@@ -14,6 +14,7 @@ import { TOOLS } from "../components/toolbar/tools";
 import { v4 as uuid } from "uuid";
 import useImage from "use-image";
 import dynamic from "next/dynamic";
+import Rulers from "./Rulers";
 
 const TextNodeBrowser = dynamic(
   () => import("../components/konvas/TextNodeBrowser"),
@@ -48,8 +49,50 @@ export default function Studio() {
   const [selectedId, setSelectedId] = useState(null);
   const [brushColor, setBrushColor] = useState("#000000");
   const [brushWidth, setBrushWidth] = useState(5);
+  const [templateSet, setTemplateSet] = useState(false);
+  const [templateColor, setTemplateColor] = useState("#FFFFFF");
+  const [showRulers, setShowRulers] = useState(true);
+  const CANVAS_W = 800;
+  const CANVAS_H = 600;
 
   const stageRef = useRef();
+  const hRulerContainerRef = useRef(null);
+  const vRulerContainerRef = useRef(null);
+  const [hRulerSize, setHRulerSize] = useState({ width: 0, height: 20 });
+  const [vRulerSize, setVRulerSize] = useState({ width: 20, height: 0 });
+
+  useEffect(() => {
+    const hObs = new ResizeObserver(() => {
+      if (hRulerContainerRef.current) {
+        setHRulerSize({
+          width: hRulerContainerRef.current.offsetWidth,
+          height: 20,
+        });
+      }
+    });
+    if (hRulerContainerRef.current) hObs.observe(hRulerContainerRef.current);
+
+    const vObs = new ResizeObserver(() => {
+      if (vRulerContainerRef.current) {
+        setVRulerSize({
+          width: 20,
+          height: vRulerContainerRef.current.offsetHeight,
+        });
+      }
+    });
+    if (vRulerContainerRef.current) vObs.observe(vRulerContainerRef.current);
+
+    return () => {
+      hObs.disconnect();
+      vObs.disconnect();
+    };
+  }, [showRulers]);
+
+  const templateUrl = useMemo(
+    () => objects.find((o) => o.isTemplate)?.imageUrl || "",
+    [objects]
+  );
+  const [templateImg] = useImage(templateUrl);
 
   /* ---------- helpers inside StudioCanvas ---------- */
   const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -59,47 +102,43 @@ export default function Studio() {
       case "text":
         window.dispatchEvent(new CustomEvent("textDblClick", { detail: id }));
         break;
-      case "image":
-        const input = document.createElement("input");
-        input.type = "file";
-        input.accept = "image/*";
-        input.onchange = (e) => {
-          const file = e.target.files[0];
-          if (!file) return;
-          const url = URL.createObjectURL(file);
-          setObjects((o) =>
-            o.map((x) => (x.id === id ? { ...x, imageUrl: url } : x))
-          );
-        };
-        input.click();
-        break;
+
       default:
       /* no-op */
     }
   };
   /* ---------- helpers ---------- */
   const handleSelectTemplate = useCallback((svgPath) => {
-    const img = new Image();
+    const img = new Image(); // browser Image
     img.src = svgPath;
     img.onload = () => {
-      setObjects((o) => [
-        ...o,
-        {
-          id: uuid(),
-          type: "image",
-          imageUrl: svgPath,
-          x: 200,
-          y: 200,
-          width: 300,
-          height: 300,
-          visible: true,
+      // scale to fill canvas, center, lock
+      const scale = Math.max(
+        CANVAS_W / img.naturalWidth,
+        CANVAS_H / img.naturalHeight
+      );
+      const width = img.naturalWidth * scale;
+      const height = img.naturalHeight * scale;
+      const x = (CANVAS_W - width) / 2;
+      const y = (CANVAS_H - height) / 2;
 
-          draggable: true,
-        },
-      ]);
+      const template = {
+        id: "template-bg",
+        type: "image",
+        imageUrl: svgPath,
+        x,
+        y,
+        width,
+        height,
+        visible: true,
+        draggable: false,
+        isTemplate: true,
+      };
+      setObjects([template]); // replace everything – only background
+      setTemplateSet(true);
+      setTemplateColor("#FFFFFF");
     };
   }, []);
-
   const handleSelectLogo = useCallback(
     (svgPath) => {
       handleSelectTemplate(svgPath);
@@ -173,8 +212,29 @@ export default function Studio() {
   return (
     <div className="flex flex-col h-screen bg-neutral-900 text-white">
       <Navbar />
+
+      {/* TOP BAR – inside the column, no layout shift */}
+      <div className="flex items-center justify-between px-4 py-2 bg-white border-b border-gray-200 shadow-sm">
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-semibold">Canvas</span>
+          <button
+            onClick={() => setShowRulers((v) => !v)}
+            className={`px-3 py-1 rounded-md text-sm transition-all duration-200 ${
+              showRulers
+                ? "bg-blue-500 text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            {showRulers ? "Hide Rulers" : "Show Rulers"}
+          </button>
+        </div>
+        <div className="text-xs text-gray-500">
+          {CANVAS_W} × {CANVAS_H}px
+        </div>
+      </div>
+
       <div className="flex flex-1 overflow-hidden">
-        {/* LEFT */}
+        {/* LEFT PANEL */}
         <div className="flex">
           <div className="flex flex-col bg-gray-100 p-2 border-r w-auto">
             <button
@@ -204,140 +264,224 @@ export default function Studio() {
             }`}
           >
             {isTemplatePanelOpen && (
-              <TemplatePanel onSelectTemplate={handleSelectTemplate} />
+              <TemplatePanel
+                onSelectTemplate={handleSelectTemplate}
+                setObjects={setObjects}
+              />
             )}
             {isLogoPanelOpen && <LogoPanel onSelectLogo={handleSelectLogo} />}
           </div>
         </div>
 
-        {/* CENTER – CANVAS */}
-        <div className="flex-grow flex items-center justify-center bg-gray-200 p-4">
-          <div className="border rounded-lg p-2 bg-white shadow-inner">
-            <Stage
-              width={800}
-              height={600}
-              className="bg-gray-100"
-              onClick={(e) => {
-                const clicked = e.target;
-                if (clicked === e.target.getStage()) {
-                  setSelectedId(null);
-                  return;
-                }
-                const id = clicked.id();
-                if (!id) return;
-
-                /* 1. SELECT */
-                setSelectedId(id);
-
-                /* 2. ACTIVATE TOOL MODE */
-                const obj = objects.find((o) => o.id === id);
-                if (obj) setActiveTool(capitalize(obj.type)); // "text" → "TEXT"
-              }}
-              onDblClick={(e) => {
-                e.cancelBubble = true; // stop stage eating it
-                const id = e.target.id();
-                if (!id) return;
-                const obj = objects.find((o) => o.id === id);
-                if (obj) executeExtendedAction(obj, id); // see below
-              }}
-              ref={stageRef}
-              style={{ pointerEvents: "auto" }}
-            >
-              <Layer>
-                {objects.map((obj) => {
-                  if (obj.type === "text")
-                    return (
-                      <TextNodeBrowser
-                        key={obj.id}
-                        shapeProps={obj}
-                        isSelected={obj.id === selectedId}
-                        onChange={(newAttrs) =>
-                          setObjects((o) =>
-                            o.map((x) =>
-                              x.id === obj.id ? { ...x, ...newAttrs } : x
-                            )
-                          )
-                        }
-                      />
-                    );
-                  if (obj.type === "rect")
-                    return (
-                      <RectNode
-                        key={obj.id}
-                        shapeProps={obj}
-                        isSelected={obj.id === selectedId}
-                        onChange={(newAttrs) =>
-                          setObjects((o) =>
-                            o.map((x) =>
-                              x.id === obj.id ? { ...x, ...newAttrs } : x
-                            )
-                          )
-                        }
-                      />
-                    );
-                  if (obj.type === "image")
-                    return (
-                      <ImageNode
-                        key={obj.id}
-                        shapeProps={obj}
-                        isSelected={obj.id === selectedId}
-                        onChange={(newAttrs) =>
-                          setObjects((o) =>
-                            o.map((x) =>
-                              x.id === obj.id ? { ...x, ...newAttrs } : x
-                            )
-                          )
-                        }
-                      />
-                    );
-                  return null;
-                })}
-                {(activeTool === TOOLS.BRUSH ||
-                  activeTool === TOOLS.ERASER) && (
-                  <DrawingLayer
-                    tool={activeTool.toLowerCase()}
-                    color={brushColor}
-                    strokeWidth={brushWidth}
+        {/* CENTER AND RIGHT PANELS */}
+        <div className="flex-1 flex">
+          <div className="flex-1 flex flex-col">
+            {showRulers && (
+              <div className="flex">
+                <div
+                  style={{ width: 20, height: 20 }}
+                  className="bg-gray-50 border-r border-b border-gray-300"
+                ></div>
+                <div className="flex-1" ref={hRulerContainerRef}>
+                  <Rulers
+                    stageRef={stageRef}
+                    stageSize={hRulerSize}
+                    orientation="horizontal"
                   />
-                )}
-              </Layer>
-            </Stage>
-            <p className="text-xs text-gray-500 mt-2 text-center">
-              Hint: Drag objects, resize using corners, double-click text to
-              edit.
-            </p>
-          </div>
-        </div>
+                </div>
+              </div>
+            )}
+            <div className="flex flex-1">
+              {showRulers && (
+                <div ref={vRulerContainerRef}>
+                  <Rulers
+                    stageRef={stageRef}
+                    stageSize={vRulerSize}
+                    orientation="vertical"
+                  />
+                </div>
+              )}
+              <div className="flex-grow flex items-center justify-center bg-gray-100 p-4 overflow-auto">
+                <div
+                  className="border rounded-lg  bg-white shadow-lg"
+                  style={{ width: CANVAS_W, height: CANVAS_H }}
+                >
+                  <Stage
+                    width={CANVAS_W}
+                    height={CANVAS_H}
+                    className="bg-white"
+                    onClick={(e) => {
+                      const clicked = e.target;
+                      if (clicked === e.target.getStage()) {
+                        setSelectedId(null);
+                        return;
+                      }
+                      const id = clicked.id();
+                      if (!id) return;
+                      setSelectedId(id);
+                      const obj = objects.find((o) => o.id === id);
+                      if (obj) setActiveTool(capitalize(obj.type));
+                    }}
+                    onDblClick={(e) => {
+                      e.cancelBubble = true;
+                      const id = e.target.id();
+                      if (!id) return;
+                      const obj = objects.find((o) => o.id === id);
+                      if (obj) executeExtendedAction(obj, id);
+                    }}
+                    ref={stageRef}
+                  >
+                    <Layer>
+                      {/* template background – 90 % of Stage, centered, locked */}
+                      {templateImg && (
+                        <ImageNode
+                          key="template-bg"
+                          shapeProps={{
+                            id: "template-bg",
+                            type: "image",
+                            imageUrl: templateUrl,
+                            x:
+                              (CANVAS_W -
+                                (objects.find((o) => o.isTemplate)?.width ||
+                                  CANVAS_W * 0.9)) /
+                              2,
+                            y:
+                              (CANVAS_H -
+                                (objects.find((o) => o.isTemplate)?.height ||
+                                  CANVAS_H * 0.9)) /
+                              2,
+                            width:
+                              objects.find((o) => o.isTemplate)?.width ||
+                              CANVAS_W * 0.9,
+                            height:
+                              objects.find((o) => o.isTemplate)?.height ||
+                              CANVAS_H * 0.9,
+                            visible: true,
+                            draggable: false,
+                            isTemplate: true,
+                          }}
+                          isSelected={false}
+                          onChange={() => {}} // locked – no change
+                          loadedImage={templateImg}
+                        />
+                      )}
 
-        {/* RIGHT */}
-        <div className="w-80 bg-gray-100 text-gray-600 p-4 flex flex-col">
-          <div className="flex-grow overflow-y-auto">
-            <ToolSettings
-              activeTool={activeTool}
-              setActiveTool={setActiveTool}
-              selectedId={selectedId}
-              objects={objects}
-              setObjects={setObjects}
-              brushColor={brushColor}
-              setBrushColor={setBrushColor}
-              brushWidth={brushWidth}
-              setBrushWidth={setBrushWidth}
-              setSelectedId={setSelectedId}
-            />
-            <ObjectPanel selectedId={selectedId} objects={objects} />
-            <LayersPanel
-              objects={objects}
-              setObjects={setObjects}
-              selectedId={selectedId}
-              setSelectedId={setSelectedId}
-            />
+                      {/* user objects */}
+                      {objects
+                        .filter((o) => !o.isTemplate)
+                        .map((obj) => {
+                          if (obj.type === "text")
+                            return (
+                              <TextNodeBrowser
+                                key={obj.id}
+                                shapeProps={obj}
+                                isSelected={obj.id === selectedId}
+                                onChange={(newAttrs) =>
+                                  setObjects((o) =>
+                                    o.map((x) =>
+                                      x.id === obj.id
+                                        ? { ...x, ...newAttrs }
+                                        : x
+                                    )
+                                  )
+                                }
+                              />
+                            );
+                          if (obj.type === "rect")
+                            return (
+                              <RectNode
+                                key={obj.id}
+                                shapeProps={obj}
+                                isSelected={obj.id === selectedId}
+                                onChange={(newAttrs) =>
+                                  setObjects((o) =>
+                                    o.map((x) =>
+                                      x.id === obj.id
+                                        ? { ...x, ...newAttrs }
+                                        : x
+                                    )
+                                  )
+                                }
+                              />
+                            );
+                          if (obj.type === "image")
+                            return (
+                              <ImageNode
+                                key={obj.id}
+                                shapeProps={obj}
+                                isSelected={obj.id === selectedId}
+                                onChange={(newAttrs) =>
+                                  setObjects((o) =>
+                                    o.map((x) =>
+                                      x.id === obj.id
+                                        ? { ...x, ...newAttrs }
+                                        : x
+                                    )
+                                  )
+                                }
+                              />
+                            );
+                          return null;
+                        })}
+
+                      {(activeTool === TOOLS.BRUSH ||
+                        activeTool === TOOLS.ERASER) && (
+                        <DrawingLayer
+                          tool={activeTool.toLowerCase()}
+                          color={brushColor}
+                          strokeWidth={brushWidth}
+                        />
+                      )}
+                    </Layer>
+                  </Stage>
+                  <p className="text-xs text-gray-500 mt-2 text-center">
+                    Hint: Drag objects, resize using corners, double-click text
+                    to edit.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="mt-auto">
-            <LayerActions
-              objects={objects}
-              setObjects={setObjects}
-              selectedId={selectedId}
-            />
+          {/* RIGHT PANEL */}
+          <div className="w-80 bg-gray-100 text-gray-600 p-4 flex flex-col border-l border-gray-200">
+            <div className="flex-grow overflow-y-auto">
+              <ToolSettings
+                activeTool={activeTool}
+                setActiveTool={setActiveTool}
+                selectedId={selectedId}
+                objects={objects}
+                setObjects={setObjects}
+                brushColor={brushColor}
+                setBrushColor={setBrushColor}
+                brushWidth={brushWidth}
+                setBrushWidth={setBrushWidth}
+                setSelectedId={setSelectedId}
+              />
+              <ObjectPanel
+                selectedId={selectedId}
+                objects={objects}
+                onChange={(newAttrs) =>
+                  setObjects((o) =>
+                    o.map((x) =>
+                      x.id === selectedId ? { ...x, ...newAttrs } : x
+                    )
+                  )
+                }
+              />
+              <LayersPanel
+                objects={objects}
+                setObjects={setObjects}
+                selectedId={selectedId}
+                setSelectedId={setSelectedId}
+              />
+            </div>
+            <div className="mt-auto">
+              <LayerActions
+                objects={objects}
+                setObjects={setObjects}
+                selectedId={selectedId}
+              />
+            </div>
           </div>
         </div>
       </div>

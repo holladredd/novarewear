@@ -19,6 +19,27 @@ export default function ToolSettings({
 }) {
   return (
     <div className="bg-white rounded p-4 shadow mb-4 space-y-4">
+      {/* board colour – always visible when template exists */}
+      {objects.some((o) => o.isTemplate) && (
+        <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+          <h3 className="text-sm font-semibold text-gray-700 mb-2">
+            Board Colour
+          </h3>
+          <input
+            type="color"
+            value={objects.find((o) => o.isTemplate)?.fill || "#FFFFFF"}
+            onChange={(e) =>
+              setObjects((o) =>
+                o.map((x) =>
+                  x.isTemplate ? { ...x, fill: e.target.value } : x
+                )
+              )
+            }
+            className="w-full h-8 rounded cursor-pointer border-none"
+          />
+        </div>
+      )}
+
       {activeTool === TOOLS.TEXT && (
         <TextSettingsBrowser
           selectedId={selectedId}

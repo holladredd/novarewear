@@ -23,6 +23,18 @@ export default function TemplatePanel({ onSelectTemplate, setObjects }) {
       name: "Polo Shirt",
       path: "/templates/vecteezy_polo-shirt-vector-illustration-template-front-and-back_6896922.svg",
     },
+    {
+      name: "Hoodie technical fashion",
+      path: "/templates/vecteezy_hoodie-technical-fashion-flat-sketch-vector-template_6896901-removebg-preview.png",
+    },
+    {
+      name: "Leggings pant",
+      path: "/templates/vecteezy_leggings-pant-technical-fashion-flat-sketch-vector_8162523-1-removebg-preview.png",
+    },
+    {
+      name: "Long sleeve",
+      path: "/templates/vecteezy_long-sleeve-hoodie-vector-illustration-blue-color-template_7163981-removebg-preview.png",
+    },
   ];
 
   return (
@@ -50,13 +62,6 @@ export default function TemplatePanel({ onSelectTemplate, setObjects }) {
             </span>
           </div>
         ))}
-      </div>
-
-      {/* raster-only add button */}
-      <div className="mt-6 pt-4 border-t border-gray-800">
-        <AddImageButton
-          onImageAdd={(newImage) => setObjects((o) => [...o, newImage])}
-        />
       </div>
     </div>
   );

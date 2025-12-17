@@ -67,12 +67,8 @@ function LayerItem({
       onClick={() => selectObject(obj.id)} // row click = select
     >
       {/* drag handle = layer name */}
-      <span
-        className="capitalize cursor-move"
-        {...attributes}
-        {...listeners} // ONLY here
-      >
-        {obj.type}
+      <span className="capitalize cursor-move" {...attributes} {...listeners}>
+        {obj.originalName || obj.type} {/* Shows "logo" if available */}
       </span>
 
       {/* buttons – NO listeners */}

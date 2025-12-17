@@ -299,6 +299,25 @@ export default function ObjectPanel({ selectedId, objects, onChange }) {
       {/* type-specific block */}
       {controls()}
 
+      {/* clipping */}
+      <div className="border-t pt-3 mt-3">
+        <label className="text-sm font-semibold">Clip to Object</label>
+        <select
+          value={obj.clipById || ""}
+          onChange={(e) => update({ clipById: e.target.value || undefined })}
+          className="w-full px-2 py-1 border rounded mt-1"
+        >
+          <option value="">None</option>
+          {objects
+            .filter((o) => o.id !== selectedId)
+            .map((o) => (
+              <option key={o.id} value={o.id}>
+                {o.type} ({o.id.slice(0, 4)})
+              </option>
+            ))}
+        </select>
+      </div>
+
       {/* alignment quick buttons */}
       <div className="flex gap-2">
         <button

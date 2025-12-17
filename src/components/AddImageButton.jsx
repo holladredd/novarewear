@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { FaImage } from "react-icons/fa";
 import { v4 as uuid } from "uuid";
+import { IoCloudUploadOutline } from "react-icons/io5";
 
 export default function AddImageButton({ onImageAdd }) {
   const fileRef = useRef(null);
@@ -57,14 +58,7 @@ export default function AddImageButton({ onImageAdd }) {
         disabled={loading}
         className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 bg-gray-100 border border-gray-200 rounded-lg hover:bg-gray-200 active:bg-gray-200 disabled:opacity-50 transition-all duration-200 transform hover:scale-[1.02]"
       >
-        {loading ? (
-          <span className="animate-pulse">Adding…</span>
-        ) : (
-          <>
-            <FaImage className="text-blue-400" />
-            Add Image
-          </>
-        )}
+        <IoCloudUploadOutline size={24} />
       </button>
     </div>
   );

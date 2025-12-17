@@ -2,17 +2,20 @@ import { useRef, useEffect } from "react";
 import { Image, Transformer } from "react-konva";
 import useImage from "use-image";
 import Konva from "konva";
+import { useClipFunc } from "@/hooks/useClipFunc";
 
 export default function ImageNodeBrowser({
   shapeProps,
   isSelected,
   onChange,
   loadedImage,
+  clipObject,
 }) {
   const [image, status] = useImage(shapeProps.imageUrl, "anonymous");
   const finalImage = loadedImage || image;
   const shapeRef = useRef();
   const trRef = useRef();
+  const clipFunc = useClipFunc(clipObject, shapeProps);
 
   useEffect(() => {
     if (isSelected && shapeRef.current) {
@@ -45,31 +48,26 @@ export default function ImageNodeBrowser({
     <>
       <Image
         ref={shapeRef}
-        image={finalImage}
         {...shapeProps}
+        image={finalImage}
+        clipFunc={clipFunc} // Now using the memoized clip function
         draggable
         onDragEnd={(e) => onChange({ x: e.target.x(), y: e.target.y() })}
-        onTransformEnd={() => {
-          const node = shapeRef.current;
-          const scaleX = node.scaleX();
-          const scaleY = node.scaleY();
-          node.scaleX(1);
-          node.scaleY(1);
+        onTransformEnd={(e) => {
+          const node = e.target;
           onChange({
             x: node.x(),
             y: node.y(),
-            width: Math.max(5, node.width() * scaleX),
-            height: Math.max(node.height() * scaleY),
+            rotation: node.rotation(),
+            scaleX: node.scaleX(),
+            scaleY: node.scaleY(),
           });
         }}
-        filters={
-          shapeProps.colorize
-            ? [Konva.Filters.Grayscale, Konva.Filters.Colorize]
-            : undefined
-        }
+        filters={[Konva.Filters.Colorize]}
         colorizeRed={shapeProps.colorizeRed}
         colorizeGreen={shapeProps.colorizeGreen}
         colorizeBlue={shapeProps.colorizeBlue}
+        colorize={shapeProps.colorize}
       />
       {isSelected && (
         <Transformer

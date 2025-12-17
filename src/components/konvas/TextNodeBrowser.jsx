@@ -1,122 +1,85 @@
 import { Text, Transformer } from "react-konva";
 import { useRef, useEffect, useState } from "react";
+import { Html } from "react-konva-utils";
+import Konva from "konva";
+import { useClipFunc } from "@/hooks/useClipFunc";
 
-export default function TextNodeBrowser({ shapeProps, isSelected, onChange }) {
+export default function TextNodeBrowser({
+  shapeProps,
+  isSelected,
+  onChange,
+  clipObject,
+}) {
   const shapeRef = useRef();
   const trRef = useRef();
-  const [editor, setEditor] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const clipFunc = useClipFunc(clipObject, shapeProps);
 
-  /* transformer */
   useEffect(() => {
-    if (isSelected && shapeRef.current && !editor) {
+    if (isSelected && shapeRef.current) {
       trRef.current.nodes([shapeRef.current]);
       trRef.current.getLayer().batchDraw();
     }
-  }, [isSelected, editor]);
+  }, [isSelected]);
 
-  /* ---------- editor ---------- */
   useEffect(() => {
-    if (!editor) return;
-    const ta = document.getElementById(`ed-${shapeProps.id}`);
-    if (!ta) return;
-    ta.focus();
-    ta.select();
-
-    const save = () => {
-      onChange({ text: ta.value });
-      setEditor(false);
+    const onDblClick = (e) => {
+      if (e.detail === shapeProps.id) setIsEditing(true);
     };
+    window.addEventListener("textDblClick", onDblClick);
+    return () => window.removeEventListener("textDblClick", onDblClick);
+  }, [shapeProps.id]);
 
-    ta.onkeydown = (e) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        save();
-      }
-      if (e.key === "Escape") setEditor(false);
-    };
-    ta.onblur = save;
-
-    return () => (ta.onkeydown = ta.onblur = null);
-  }, [editor, shapeProps.id, onChange]);
-
-  /* exit if another object selected */
-  useEffect(() => {
-    if (editor && !isSelected) setEditor(false);
-  }, [isSelected, editor]);
-
-  const stage = shapeRef.current?.getStage();
-  const scale = stage ? stage.scaleX() : 1;
-  const box = shapeRef.current?.getClientRect() || {
-    x: shapeProps.x,
-    y: shapeProps.y,
-    width: 200,
-    height: 30,
-  };
+  if (isEditing)
+    return (
+      <Html>
+        <textarea
+          value={shapeProps.text}
+          onChange={(e) => onChange({ text: e.target.value })}
+          onBlur={() => setIsEditing(false)}
+          style={{
+            position: "absolute",
+            top: shapeRef.current.y() + "px",
+            left: shapeRef.current.x() + "px",
+            width: shapeRef.current.width(),
+            height: shapeRef.current.height(),
+            border: "none",
+            padding: "0px",
+            margin: "0px",
+            overflow: "hidden",
+            background: "none",
+            outline: "none",
+            resize: "none",
+            transformOrigin: "left top",
+            fontSize: shapeRef.current.fontSize(),
+            fontFamily: shapeRef.current.fontFamily(),
+            transform: "rotateZ(" + shapeRef.current.rotation() + "deg)",
+            color: shapeRef.current.fill(),
+          }}
+        />
+      </Html>
+    );
 
   return (
     <>
-      {/* ghost while editing */}
-      {editor && <Text {...shapeProps} opacity={0.3} listening={false} />}
-
-      {/* real text */}
-      {!editor && (
-        <>
-          <Text
-            ref={shapeRef}
-            {...shapeProps}
-            draggable
-            onDblClick={() => setEditor(true)}
-            onDragEnd={(e) => onChange({ x: e.target.x(), y: e.target.y() })}
-            onTransformEnd={(e) => {
-              const n = e.target;
-              onChange({
-                x: n.x(),
-                y: n.y(),
-                rotation: n.rotation(),
-                scaleX: n.scaleX(),
-                scaleY: n.scaleY(),
-                width: n.width() * n.scaleX(),
-                height: n.height() * n.scaleY(),
-              });
-            }}
-          />
-        </>
-      )}
-
-      {/* textarea overlay */}
-      {editor && (
-        <foreignObject
-          x={shapeProps.x}
-          y={shapeProps.y}
-          width={(shapeProps.width || 200) * (shapeProps.scaleX || 1)}
-          height={(shapeProps.height || 30) * (shapeProps.scaleY || 1)}
-          scaleX={shapeProps.scaleX || 1}
-          scaleY={shapeProps.scaleY || 1}
-          rotation={shapeProps.rotation || 0}
-          offsetX={shapeProps.offsetX || 0}
-          offsetY={shapeProps.offsetY || 0}
-        >
-          <textarea
-            id={`ed-${shapeProps.id}`}
-            style={{
-              width: "100%",
-              height: "100%",
-              fontSize: `${shapeProps.fontSize}px`,
-              fontFamily: shapeProps.fontFamily,
-              color: shapeProps.fill,
-              background: "#fff",
-              border: "1px solid #0077ff",
-              padding: 2,
-              resize: "none",
-              outline: "none",
-              lineHeight: 1,
-            }}
-            defaultValue={shapeProps.text}
-            autoFocus
-          />
-        </foreignObject>
-      )}
-      {isSelected && !editor && <Transformer ref={trRef} />}
+      <Text
+        ref={shapeRef}
+        {...shapeProps}
+        clipFunc={clipFunc} // Use the hook result
+        draggable
+        onDragEnd={(e) => onChange({ x: e.target.x(), y: e.target.y() })}
+        onTransformEnd={(e) => {
+          const node = e.target;
+          onChange({
+            x: node.x(),
+            y: node.y(),
+            rotation: node.rotation(),
+            scaleX: node.scaleX(),
+            scaleY: node.scaleY(),
+          });
+        }}
+      />
+      {isSelected && <Transformer ref={trRef} />}
     </>
   );
 }

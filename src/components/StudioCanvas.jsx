@@ -15,6 +15,8 @@ import { v4 as uuid } from "uuid";
 import useImage from "use-image";
 import dynamic from "next/dynamic";
 import Rulers from "./Rulers";
+import AddImageButton from "./AddImageButton";
+import { getPathData } from "@/utils/svg";
 
 const TextNodeBrowser = dynamic(
   () => import("../components/konvas/TextNodeBrowser"),
@@ -40,6 +42,12 @@ const ImageNode = dynamic(
 );
 const LogoNodeBrowser = dynamic(
   () => import("../components/konvas/LogoNodeBrowser"),
+  {
+    ssr: false,
+  }
+);
+const PathNodeBrowser = dynamic(
+  () => import("../components/konvas/PathNodeBrowser"),
   {
     ssr: false,
   }
@@ -119,14 +127,14 @@ export default function Studio() {
     img.src = svgPath;
     img.onload = () => {
       // scale to fill canvas, center, lock
-      const scale = Math.max(
-        CANVAS_W / img.naturalWidth,
-        CANVAS_H / img.naturalHeight
-      );
-      const width = img.naturalWidth * scale;
-      const height = img.naturalHeight * scale;
-      const x = (CANVAS_W - width) / 2;
-      const y = (CANVAS_H - height) / 2;
+      // const scale = Math.max(
+      //   CANVAS_W / img.naturalWidth,
+      //   CANVAS_H / img.naturalHeight
+      // );
+      // const width = img.naturalWidth * scale;
+      // const height = img.naturalHeight * scale;
+      const x = CANVAS_W / 2;
+      const y = CANVAS_H / 2;
 
       const template = {
         id: "template-bg",
@@ -134,8 +142,8 @@ export default function Studio() {
         imageUrl: svgPath,
         x,
         y,
-        width,
-        height,
+        width: CANVAS_W,
+        height: CANVAS_H,
         visible: true,
         draggable: false,
         isTemplate: true,
@@ -146,20 +154,20 @@ export default function Studio() {
     };
   }, []);
   const handleSelectLogo = useCallback((svgPath) => {
+    // Force image mode - never fails
     const newLogo = {
       id: uuid(),
       type: "logo",
       imageUrl: svgPath,
-      x: 50,
-      y: 50,
-      width: 150,
-      height: 150,
+      x: 200,
+      y: 300,
+      width: 200,
+      height: 200,
       visible: true,
       draggable: true,
     };
     setObjects((o) => [...o, newLogo]);
   }, []);
-
   const toggleTemplatePanel = () => {
     setIsTemplatePanelOpen((p) => !p);
     if (isLogoPanelOpen) setIsLogoPanelOpen(false);
@@ -270,6 +278,10 @@ export default function Studio() {
               redo={redo}
             />
             <LogoButton onClick={toggleLogoPanel} isOpen={isLogoPanelOpen} />
+            {/* raster-only add button */}
+            <AddImageButton
+              onImageAdd={(newImage) => setObjects((o) => [...o, newImage])}
+            />
           </div>
 
           <div
@@ -351,6 +363,28 @@ export default function Studio() {
                     ref={stageRef}
                   >
                     <Layer>
+                      {/* Debug: Show clip masks in red */}
+                      {objects.map((obj) => {
+                        if (!obj.clipById) return null;
+                        const clipObj = objects.find(
+                          (o) => o.id === obj.clipById
+                        );
+                        if (!clipObj) return null;
+
+                        return (
+                          <Rect
+                            key={`clip-debug-${obj.id}`}
+                            x={clipObj.x}
+                            y={clipObj.y}
+                            width={clipObj.width || 100}
+                            height={clipObj.height || 100}
+                            stroke="red"
+                            strokeWidth={2}
+                            listening={false}
+                          />
+                        );
+                      })}
+
                       {/* template background – 90 % of Stage, centered, locked */}
                       {templateImg && (
                         <ImageNode
@@ -389,12 +423,41 @@ export default function Studio() {
                       {objects
                         .filter((o) => !o.isTemplate)
                         .map((obj) => {
+                          // === DEBUG BLOCK - ADD THESE LINES ===
+                          const clipObject = obj.clipById
+                            ? objects.find((o) => o.id === obj.clipById)
+                            : null;
+
+                          if (clipObject) {
+                            console.log(
+                              `🔍 CLIPPING ACTIVE: ${obj.type}-${obj.id.slice(
+                                0,
+                                4
+                              )} clipped by ${
+                                clipObject.type
+                              }-${clipObject.id.slice(0, 4)}`
+                            );
+                            console.log(
+                              `   Shape at (${obj.x},${obj.y}) size ${
+                                obj.width || 0
+                              }x${obj.height || 0}`
+                            );
+                            console.log(
+                              `   Clip at (${clipObject.x},${
+                                clipObject.y
+                              }) size ${clipObject.width || 0}x${
+                                clipObject.height || 0
+                              }`
+                            );
+                          }
+
                           if (obj.type === "text")
                             return (
                               <TextNodeBrowser
                                 key={obj.id}
                                 shapeProps={obj}
                                 isSelected={obj.id === selectedId}
+                                clipObject={clipObject}
                                 onChange={(newAttrs) =>
                                   setObjects((o) =>
                                     o.map((x) =>
@@ -412,6 +475,7 @@ export default function Studio() {
                                 key={obj.id}
                                 shapeProps={obj}
                                 isSelected={obj.id === selectedId}
+                                clipObject={clipObject}
                                 onChange={(newAttrs) =>
                                   setObjects((o) =>
                                     o.map((x) =>
@@ -429,6 +493,7 @@ export default function Studio() {
                                 key={obj.id}
                                 shapeProps={obj}
                                 isSelected={obj.id === selectedId}
+                                clipObject={clipObject}
                                 onChange={(newAttrs) =>
                                   setObjects((o) =>
                                     o.map((x) =>
@@ -446,6 +511,25 @@ export default function Studio() {
                                 key={obj.id}
                                 shapeProps={obj}
                                 isSelected={obj.id === selectedId}
+                                clipObject={clipObject}
+                                onChange={(newAttrs) =>
+                                  setObjects((o) =>
+                                    o.map((x) =>
+                                      x.id === obj.id
+                                        ? { ...x, ...newAttrs }
+                                        : x
+                                    )
+                                  )
+                                }
+                              />
+                            );
+                          if (obj.type === "path")
+                            return (
+                              <PathNodeBrowser
+                                key={obj.id}
+                                shapeProps={obj}
+                                isSelected={obj.id === selectedId}
+                                clipObject={clipObject}
                                 onChange={(newAttrs) =>
                                   setObjects((o) =>
                                     o.map((x) =>

@@ -9,10 +9,22 @@ export default function Document() {
         <meta name="description" content="Nothing Ordinary." />
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="NØVÁRE" />
-        <meta property="og:image" content="/logo/novare.jpg" />
-        <meta name="twitter:image" content="/logo/novare.jpg" />
+        <meta
+          property="og:image"
+          content="https://novarewear.vercel.app/novare.jpg"
+        />
+        <meta
+          name="twitter:image"
+          content="https://novarewear.vercel.app/novare.jpg"
+        />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
+        <link rel="canonical" href="https://novarewear.vercel.app" />
+        <meta name="author" content="NØVÁRE Group" />
+        <meta
+          name="keywords"
+          content="NØVÁRE, Novare, clothing, fashion, streetwear, minimalist, modern, lookbook, shop, high-quality apparel"
+        />
       </Head>
       <body className="antialiased">
         <Main />

@@ -219,10 +219,12 @@ export default function Navbar() {
           </div>
         </motion.div>
       )}
-      <LoginModal
-        isOpen={isLoginModalOpen}
-        onClose={() => setLoginModalOpen(false)}
-      />
+      <div className="w-full h-screen flex items-center justify-center">
+        <LoginModal
+          isOpen={isLoginModalOpen}
+          onClose={() => setLoginModalOpen(false)}
+        />
+      </div>
     </motion.div>
   );
 }

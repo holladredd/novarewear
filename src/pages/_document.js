@@ -9,14 +9,8 @@ export default function Document() {
         <meta name="description" content="Nothing Ordinary." />
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="NØVÁRE" />
-        <meta
-          property="og:image"
-          content="https://novarewear.vercel.app/logo/novare.jpg"
-        />
-        <meta
-          name="twitter:image"
-          content="https://novarewear.vercel.app/logo/novare.jpg"
-        />
+        <meta property="og:image" content="/logo/novare.jpg" />
+        <meta name="twitter:image" content="/logo/novare.jpg" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
       </Head>

@@ -23,7 +23,7 @@ export default function Document() {
         <meta name="author" content="NØVÁRE Group" />
         <meta
           name="keywords"
-          content="NØVÁRE, Novare, clothing, fashion, streetwear, minimalist, modern, lookbook, shop, high-quality apparel"
+          content="NØVÁRE, Novare, clothing, fashion, streetwear, minimalist, modern, lookbook, shop, high-quality apparel,hoodies,urban wear,luxury fashion, contemporary clothing, stylish apparel, trendy outfits, casual wear, fashion brand, unique designs, exclusive collections, premium quality, fashion trends, clothing line, designer wear, fashion essentials"
         />
       </Head>
       <body className="antialiased">

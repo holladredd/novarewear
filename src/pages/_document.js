@@ -4,8 +4,9 @@ export default function Document() {
   return (
     <Html lang="en">
       <Head>
-        <link rel="icon" href="/logo/dredd-branding.png" />
-        <title>Dredd Apparel</title>
+        <link rel="icon" href="/logo/novare.svg" sizes="any" />
+        <title>NØVÁRE</title>
+        <meta name="description" content="Nothing Ordinary." />
       </Head>
       <body className="antialiased">
         <Main />

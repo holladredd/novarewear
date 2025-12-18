@@ -1,5 +1,5 @@
 {
-  "name": "dredd_apparel",
+  "name": "novare",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -51,6 +51,7 @@
     "@react-three/fiber": "^8.18.0",
     "canvas": "^3.2.0",
     "file-saver": "^2.0.5",
+    "framer-motion": "^12.23.26",
     "konva": "^9.3.22",
     "nanoid": "^5.1.6",
     "next": "14.2.3",

@@ -187,7 +187,9 @@ const OrderHistory = ({ orders }) => (
                 className="flex justify-between text-xs sm:text-sm"
               >
                 <span>{item.name}</span>
-                <span className="text-gray-600">${item.price.toFixed(2)}</span>
+                <span className="text-gray-600">
+                  ${item?.price?.toFixed(2)}
+                </span>
               </div>
             ))}
           </div>

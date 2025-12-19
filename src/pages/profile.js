@@ -1,44 +1,67 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import { motion } from "framer-motion";
-import { FiUser, FiShoppingBag, FiSettings } from "react-icons/fi";
-
-// Mock data
-const user = {
-  name: "Alex Doe",
-  email: "alex.doe@example.com",
-  avatar: "/user/avatar.png", // Placeholder avatar
-};
-
-const orders = [
-  {
-    id: "NOV-12345",
-    date: "2023-10-15",
-    total: "$340.00",
-    status: "Delivered",
-    items: [
-      { name: "Oversized Tee Black", price: "$120.00" },
-      { name: "Novare Hoodie", price: "$220.00" },
-    ],
-  },
-  {
-    id: "NOV-12344",
-    date: "2023-09-21",
-    total: "$180.00",
-    status: "Delivered",
-    items: [{ name: "Relaxed Pants", price: "$180.00" }],
-  },
-];
+import { FiUser, FiShoppingBag, FiSettings, FiHeart } from "react-icons/fi";
+import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/router";
+import { useQuery } from "@tanstack/react-query";
+import api from "@/lib/api";
 
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("orders");
+  const { isAuthenticated, loading: authLoading } = useAuth();
+  const router = useRouter();
+
+  const {
+    data: user,
+    isLoading: userIsLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["user"],
+    queryFn: async () => {
+      try {
+        const { data } = await api.get("auth/me/");
+        return data.user;
+      } catch (error) {
+        console.error("Failed to fetch user profile", error);
+        return null;
+      }
+    },
+    enabled: isAuthenticated,
+  });
+
+  const loading = authLoading || (isAuthenticated && userIsLoading);
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push("/");
+    }
+  }, [authLoading, isAuthenticated, router]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  if (isError || !user) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <p>Could not load user profile.</p>
+      </div>
+    );
+  }
 
   const renderContent = () => {
     switch (activeTab) {
       case "orders":
-        return <OrderHistory />;
+        return <OrderHistory orders={user?.orders || []} />;
+      case "wishlist":
+        return <Wishlist wishlist={user?.wishlist || []} />;
       case "details":
-        return <AccountDetails />;
+        return <AccountDetails user={user} />;
       case "settings":
         return <Settings />;
       default:
@@ -57,17 +80,28 @@ export default function ProfilePage() {
         >
           {/* Profile Header */}
           <div className="flex flex-col md:flex-row items-center gap-8 mb-12">
-            <img
-              src={user.avatar}
-              alt="User Avatar"
-              className="w-24 h-24 rounded-full object-cover border-2 border-gray-200"
-            />
+            {user.username ? (
+              <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center border-2 border-gray-200">
+                <span className="text-4xl font-bold text-gray-600">
+                  {user.username?.charAt(0).toUpperCase()}
+                </span>
+              </div>
+            ) : (
+              <img
+                src={user.avatar}
+                alt="User Avatar"
+                className="w-24 h-24 rounded-full object-cover border-2 border-gray-200"
+              />
+            )}
             <div>
               <h1 className="text-3xl md:text-4xl font-bold tracking-widest">
-                {user.name}
+                {user.username}
               </h1>
               <p className="text-md tracking-wider text-gray-600">
                 {user.email}
+              </p>
+              <p className="text-md tracking-wider text-gray-600">
+                Balance: ${user.balance.toFixed(2)}
               </p>
             </div>
           </div>
@@ -79,6 +113,12 @@ export default function ProfilePage() {
               icon={<FiShoppingBag />}
               isActive={activeTab === "orders"}
               onClick={() => setActiveTab("orders")}
+            />
+            <Tab
+              label="Wishlist"
+              icon={<FiHeart />}
+              isActive={activeTab === "wishlist"}
+              onClick={() => setActiveTab("wishlist")}
             />
             <Tab
               label="Account Details"
@@ -116,49 +156,83 @@ const Tab = ({ label, icon, isActive, onClick }) => (
   </button>
 );
 
-const OrderHistory = () => (
+const OrderHistory = ({ orders }) => (
   <div className="space-y-6">
-    {orders.map((order) => (
-      <div key={order.id} className="p-6 border border-gray-100">
-        <div className="flex justify-between items-start mb-4">
-          <div>
-            <h3 className="font-semibold tracking-widest">{order.id}</h3>
-            <p className="text-sm text-gray-500">{order.date}</p>
-          </div>
-          <span
-            className={`text-sm font-semibold px-3 py-1 rounded-full ${
-              order.status === "Delivered"
-                ? "bg-green-100 text-green-800"
-                : "bg-yellow-100 text-yellow-800"
-            }`}
-          >
-            {order.status}
-          </span>
-        </div>
-        <div className="space-y-2 mb-4">
-          {order.items.map((item, index) => (
-            <div key={index} className="flex justify-between text-sm">
-              <span>{item.name}</span>
-              <span className="text-gray-600">{item.price}</span>
+    {orders.length > 0 ? (
+      orders.map((order) => (
+        <div key={order._id} className="p-6 border border-gray-100">
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <h3 className="font-semibold tracking-widest">{order._id}</h3>
+              <p className="text-sm text-gray-500">
+                {new Date(order.createdAt).toLocaleDateString()}
+              </p>
             </div>
-          ))}
+            <span
+              className={`text-sm font-semibold px-3 py-1 rounded-full ${
+                order.status === "Delivered"
+                  ? "bg-green-100 text-green-800"
+                  : "bg-yellow-100 text-yellow-800"
+              }`}
+            >
+              {order.status}
+            </span>
+          </div>
+          <div className="space-y-2 mb-4">
+            {order.items.map((item, index) => (
+              <div key={index} className="flex justify-between text-sm">
+                <span>{item.name}</span>
+                <span className="text-gray-600">${item.price.toFixed(2)}</span>
+              </div>
+            ))}
+          </div>
+          <div className="flex justify-end font-bold pt-2 border-t border-gray-100">
+            Total: ${order.total.toFixed(2)}
+          </div>
         </div>
-        <div className="flex justify-end font-bold pt-2 border-t border-gray-100">
-          Total: {order.total}
-        </div>
-      </div>
-    ))}
+      ))
+    ) : (
+      <p>You have no orders.</p>
+    )}
   </div>
 );
 
-const AccountDetails = () => (
+const Wishlist = ({ wishlist }) => (
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {wishlist.length > 0 ? (
+      wishlist.map((item) => (
+        <div key={item._id} className="border border-gray-100 p-4">
+          <img
+            src={item.image}
+            alt={item.name}
+            className="w-full h-64 object-cover mb-4"
+          />
+          <h3 className="font-semibold tracking-widest">{item.name}</h3>
+          <p className="text-gray-600">${item.price.toFixed(2)}</p>
+        </div>
+      ))
+    ) : (
+      <p>Your wishlist is empty.</p>
+    )}
+  </div>
+);
+
+const AccountDetails = ({ user }) => (
   <div className="max-w-md">
     <form className="space-y-6">
       <div>
-        <label className="block text-sm tracking-widest mb-1">Name</label>
+        <label className="block text-sm tracking-widest mb-1">First Name</label>
         <input
           type="text"
-          defaultValue={user.name}
+          defaultValue={user.firstName}
+          className="w-full border border-gray-300 px-4 py-2 focus:outline-none focus:border-black"
+        />
+      </div>
+      <div>
+        <label className="block text-sm tracking-widest mb-1">Username</label>
+        <input
+          type="text"
+          defaultValue={user.username}
           className="w-full border border-gray-300 px-4 py-2 focus:outline-none focus:border-black"
         />
       </div>

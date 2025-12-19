@@ -15,7 +15,7 @@ export function AuthProvider({ children }) {
       if (!Cookies.get("authToken")) return null;
       try {
         const { data } = await api.get("auth/me/");
-        return data;
+        return data.user;
       } catch (error) {
         return null;
       }

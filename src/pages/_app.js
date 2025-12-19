@@ -1,6 +1,5 @@
-import "@/styles/globals.css";
+import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-
 import "@fontsource/amatic-sc";
 import "@fontsource/anton";
 import "@fontsource/arimo";
@@ -41,9 +40,11 @@ import "@fontsource/yanone-kaffeesatz";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
 
-const queryClient = new QueryClient();
+import "../styles/globals.css";
 
 function MyApp({ Component, pageProps }) {
+  const [queryClient] = useState(() => new QueryClient());
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>

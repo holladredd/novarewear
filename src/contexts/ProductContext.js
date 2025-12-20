@@ -47,6 +47,11 @@ export const ProductProvider = ({ children }) => {
     return data.product;
   };
 
+  const fetchLookbook = async () => {
+    const { data } = await api.get(`/products/lookbook`);
+    return data.products;
+  };
+
   const value = {
     products: productsData?.products || [],
     pagination: productsData?.pagination || {},
@@ -55,6 +60,7 @@ export const ProductProvider = ({ children }) => {
     filters,
     setFilters,
     fetchProductBySlug,
+    fetchLookbook,
   };
 
   return (

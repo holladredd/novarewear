@@ -88,6 +88,24 @@ export default function ProductPage() {
             </div>
           </div>
         </div>
+        {product.lookImages && product.lookImages.length > 0 && (
+          <div className="mt-16">
+            <h2 className="text-2xl font-bold tracking-widest mb-6 text-center">
+              How to Wear It
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {product.lookImages.map((image, index) => (
+                <div key={index} className="overflow-hidden rounded-lg">
+                  <img
+                    src={image}
+                    alt={`Look ${index + 1}`}
+                    className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </section>
     </div>
   );

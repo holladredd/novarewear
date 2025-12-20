@@ -199,14 +199,14 @@ const LoginModal = ({ isOpen, onClose }) => {
                 <div className="my-4 flex items-center">
                   <div className="flex-grow border-t border-gray-300"></div>
                 </div>
-                <button
+                {/* <button
                   type="button"
                   onClick={openGoogleLoginPopup}
                   className="w-full py-3 font-semibold text-gray-800 bg-white border border-gray-300 rounded-md hover:bg-gray-100 flex items-center justify-center"
                 >
                   <FcGoogle className="mr-2" />
                   Continue with Google
-                </button>
+                </button> */}
               </form>
             </motion.div>
           </motion.div>

@@ -1,10 +1,12 @@
 import { createContext, useContext, useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import api from "@/lib/api";
+import Swal from "sweetalert2";
 
 const ProductContext = createContext();
 
 export const ProductProvider = ({ children }) => {
+  const queryClient = useQueryClient();
   const [filters, setFilters] = useState({
     search: "",
     category: "",
@@ -42,6 +44,59 @@ export const ProductProvider = ({ children }) => {
     },
   });
 
+  const fetchReviewsByProductId = async (productId) => {
+    if (!productId) return [];
+    const { data } = await api.get(`/reviews/${productId}`);
+    return data.reviews;
+  };
+
+  const { mutate: submitReview, isLoading: isSubmittingReview } = useMutation({
+    mutationFn: async ({ productId, rating, comment }) => {
+      const { data } = await api.post(`/reviews/${productId}`, {
+        rating,
+        comment,
+      });
+      return data;
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries(["reviews", variables.productId]);
+      Swal.fire("Success!", "Review submitted successfully.", "success");
+    },
+    onError: (error) => {
+      Swal.fire("Error!", error.message || "Could not submit review.", "error");
+    },
+  });
+
+  const { mutate: updateReview, isLoading: isUpdatingReview } = useMutation({
+    mutationFn: async ({ reviewId, rating, comment }) => {
+      const { data } = await api.put(`/reviews/${reviewId}`, {
+        rating,
+        comment,
+      });
+      return data;
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries(["reviews", variables.productId]);
+      Swal.fire("Success!", "Review updated successfully.", "success");
+    },
+    onError: (error) => {
+      Swal.fire("Error!", error.message || "Could not update review.", "error");
+    },
+  });
+
+  const { mutate: deleteReview, isLoading: isDeletingReview } = useMutation({
+    mutationFn: async ({ reviewId }) => {
+      return api.delete(`/reviews/${reviewId}`);
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries(["reviews", variables.productId]);
+      Swal.fire("Success!", "Review deleted successfully.", "success");
+    },
+    onError: (error) => {
+      Swal.fire("Error!", error.message || "Could not delete review.", "error");
+    },
+  });
+
   const fetchProductBySlug = async (slug) => {
     const { data } = await api.get(`/products/${slug}`);
     return data.product;
@@ -61,6 +116,13 @@ export const ProductProvider = ({ children }) => {
     setFilters,
     fetchProductBySlug,
     fetchLookbook,
+    submitReview,
+    isSubmittingReview,
+    fetchReviewsByProductId,
+    updateReview,
+    isUpdatingReview,
+    deleteReview,
+    isDeletingReview,
   };
 
   return (

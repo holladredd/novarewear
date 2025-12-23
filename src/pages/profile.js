@@ -136,9 +136,9 @@ export default function ProfilePage() {
               <div className="flex flex-col items-center space-y-4">
                 <div className="relative">
                   <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center border-2 border-gray-300 overflow-hidden">
-                    {user.avatar ? (
+                    {user.avatar?.url ? (
                       <img
-                        src={user.avatar}
+                        src={user.avatar.url}
                         alt="User Avatar"
                         className="w-full h-full object-cover"
                       />
@@ -463,7 +463,11 @@ const AccountDetails = ({ user, onUpdate }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await updateProfile(formData);
+    const profileData = new FormData();
+    Object.keys(formData).forEach((key) => {
+      profileData.append(key, formData[key]);
+    });
+    await updateProfile(profileData);
     onUpdate();
     setIsEditing(false);
   };
@@ -600,7 +604,16 @@ const Address = ({ user, onUpdate }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await updateProfile(formData);
+    const addressData = new FormData();
+    addressData.append(
+      "shippingAddress",
+      JSON.stringify(formData.shippingAddress)
+    );
+    addressData.append(
+      "billingAddress",
+      JSON.stringify(formData.billingAddress)
+    );
+    await updateProfile(addressData);
     onUpdate();
     setIsEditing(false);
   };

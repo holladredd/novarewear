@@ -93,7 +93,11 @@ export function AuthProvider({ children }) {
 
   const updateProfileMutation = useMutation({
     mutationFn: async (userData) => {
-      const { data } = await api.patch("auth/updateprofile/", userData);
+      const { data } = await api.patch("auth/updateprofile/", userData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
       return data;
     },
     onSuccess: (data) => {

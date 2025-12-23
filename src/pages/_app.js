@@ -42,6 +42,8 @@ import { CartProvider } from "@/contexts/CartContext";
 
 import "../styles/globals.css";
 import { ProductProvider } from "@/contexts/ProductContext";
+import { WishlistProvider } from "@/contexts/WishlistContext";
+import { AdminProvider } from "@/contexts/AdminContext";
 
 function MyApp({ Component, pageProps }) {
   const [queryClient] = useState(() => new QueryClient());
@@ -51,7 +53,11 @@ function MyApp({ Component, pageProps }) {
       <AuthProvider>
         <CartProvider>
           <ProductProvider>
-            <Component {...pageProps} />
+            <WishlistProvider>
+              <AdminProvider>
+                <Component {...pageProps} />
+              </AdminProvider>
+            </WishlistProvider>
           </ProductProvider>
         </CartProvider>
       </AuthProvider>

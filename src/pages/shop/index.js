@@ -7,38 +7,63 @@ import {
   FiChevronLeft,
   FiChevronRight,
   FiFilter,
+  FiHeart,
 } from "react-icons/fi";
 import { useDebounce } from "@/hooks/useDebounce";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useProducts } from "@/contexts/ProductContext";
+import { useWishlist } from "@/contexts/WishlistContext";
 
-const ProductCard = ({ product }) => (
-  <div className="bg-white rounded-lg shadow-lg overflow-hidden group transform hover:-translate-y-1 transition-transform duration-300">
-    <Link href={`/shop/${product.slug}`} passHref>
-      <div className="cursor-pointer">
-        <div className="relative h-64">
-          <img
-            src={product.images[0]}
-            alt={product.name}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-black bg-opacity-20 group-hover:bg-opacity-40 transition-all duration-300 flex items-center justify-center">
-            <span className="text-white text-lg font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              View Details
-            </span>
+const ProductCard = ({ product, wishlist, addItem, removeItem }) => {
+  const isInWishlist = wishlist?.some((item) => item._id === product._id);
+
+  const handleWishlistToggle = () => {
+    if (isInWishlist) {
+      removeItem(product._id);
+    } else {
+      addItem({ productId: product._id });
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow-lg overflow-hidden group transform hover:-translate-y-1 transition-transform duration-300 relative">
+      <Link href={`/shop/${product.slug}`} passHref>
+        <div className="cursor-pointer">
+          <div className="relative h-64">
+            <img
+              src={product.images[0]}
+              alt={product.name}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-black bg-opacity-20 group-hover:bg-opacity-40 transition-all duration-300 flex items-center justify-center">
+              <span className="text-white text-lg font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                View Details
+              </span>
+            </div>
+          </div>
+          <div className="p-4">
+            <h3 className="text-lg font-semibold text-gray-800 truncate">
+              {product.name}
+            </h3>
+            <p className="text-gray-600 mt-1">₦{product.price.toFixed(2)}</p>
           </div>
         </div>
-        <div className="p-4">
-          <h3 className="text-lg font-semibold text-gray-800 truncate">
-            {product.name}
-          </h3>
-          <p className="text-gray-600 mt-1">₦{product.price.toFixed(2)}</p>
-        </div>
-      </div>
-    </Link>
-  </div>
-);
+      </Link>
+      <button
+        onClick={handleWishlistToggle}
+        className="absolute top-2 right-2 bg-white rounded-full p-2 shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+        aria-label={isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
+      >
+        <FiHeart
+          className={`w-6 h-6 ${
+            isInWishlist ? "text-red-500 fill-current" : "text-gray-400"
+          }`}
+        />
+      </button>
+    </div>
+  );
+};
 
 const FilterControls = ({
   search,
@@ -191,7 +216,7 @@ const FilterControls = ({
 const ShopPage = () => {
   const { products, pagination, isLoading, error, filters, setFilters } =
     useProducts();
-
+  const { wishlist, addItem, removeItem } = useWishlist();
   const [search, setSearch] = useState("");
   const [isFilterVisible, setIsFilterVisible] = useState(false);
 
@@ -301,7 +326,13 @@ const ShopPage = () => {
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                 {products.map((product) => (
-                  <ProductCard key={product._id} product={product} />
+                  <ProductCard
+                    key={product._id}
+                    product={product}
+                    wishlist={wishlist}
+                    addItem={addItem}
+                    removeItem={removeItem}
+                  />
                 ))}
               </div>
               {/* Pagination */}

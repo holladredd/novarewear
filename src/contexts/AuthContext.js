@@ -129,6 +129,7 @@ export function AuthProvider({ children }) {
       Cookies.remove("user");
       queryClient.setQueryData(["user"], null);
       queryClient.invalidateQueries();
+      window.location.reload();
     },
   });
 

@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect } from "react";
+import { createContext, use, useContext, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { useAuth } from "./AuthContext";
@@ -19,11 +19,12 @@ export function CartProvider({ children }) {
     enabled: isAuthenticated,
   });
 
-  const { mutate: addItem, isLoading: isAddingItem } = useMutation({
-    mutationFn: async ({ productId, size }) => {
+  const { mutate: addItem, loading: isAddingItem } = useMutation({
+    mutationFn: async ({ productId, size, quantity }) => {
       const { data } = await api.post("/cart", {
         productId,
         size,
+        quantity,
       });
       return data;
     },
@@ -102,7 +103,7 @@ export function CartProvider({ children }) {
     queryKey: ["orders"],
     queryFn: async () => {
       const { data } = await api.get("/orders");
-      return data;
+      return data.orders;
     },
     enabled: false, // Will be manually triggered
   });

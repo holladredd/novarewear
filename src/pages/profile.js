@@ -9,6 +9,8 @@ import {
   FiCamera,
   FiMapPin,
   FiLogOut,
+  FiX,
+  FiShield,
 } from "react-icons/fi";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
@@ -16,6 +18,8 @@ import { useRouter } from "next/router";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { FaMapMarkerAlt } from "react-icons/fa";
+import { useWishlist } from "@/contexts/WishlistContext";
+import Link from "next/link";
 
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("orders");
@@ -102,7 +106,7 @@ export default function ProfilePage() {
       case "orders":
         return <OrderHistory orders={orders || []} />;
       case "wishlist":
-        return <Wishlist wishlist={user?.wishlist || []} />;
+        return <Wishlist />;
       case "details":
         return <AccountDetails user={user} onUpdate={refetchUser} />;
       case "address":
@@ -126,7 +130,7 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-gray-50 text-gray-800">
       <Navbar />
       <main className="lg:col-span-9 xl:col-span-10 bg-gray-50 p-4 sm:p-6 lg:p-8">
-        <div className="lg:grid lg:grid-cols-12 lg:gap-x-8">
+        <div className="lg:grid lg:grid-cols-12 lg:gap-x-8 mt-14">
           <aside className="lg:col-span-3 xl:col-span-2 mb-8 lg:mb-0">
             <div className="sticky top-32 space-y-6">
               <div className="flex flex-col items-center space-y-4">
@@ -184,6 +188,14 @@ export default function ProfilePage() {
                     onClick={() => setActiveTab(tab.id)}
                   />
                 ))}
+                {user?.role === "admin" && (
+                  <Link href="/admin">
+                    <span className="w-full flex items-center gap-4 px-4 py-3 text-left text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200 ease-in-out group">
+                      <FiShield />
+                      <span>Admin</span>
+                    </span>
+                  </Link>
+                )}
                 <button
                   onClick={logout}
                   className="w-full flex items-center gap-3 px-4 py-3 text-sm tracking-widest transition text-red-500 hover:bg-red-50"
@@ -284,13 +296,13 @@ const CardContent = ({ children, className = "" }) => (
 const OrderHistory = ({ orders }) => (
   <div className="space-y-6">
     <h2 className="text-2xl font-bold tracking-widest">Order History</h2>
-    {orders.length > 0 ? (
+    {orders && orders.length > 0 ? (
       orders.map((order) => (
         <Card key={order._id}>
           <CardHeader className="flex flex-col sm:flex-row justify-between items-start gap-2">
             <div>
               <h3 className="font-bold tracking-widest text-sm">
-                ORDER #{order.orderId}
+                ORDER #{order._id.slice(-6)}
               </h3>
               <p className="text-xs tracking-widest text-gray-500">
                 {new Date(order.createdAt).toLocaleDateString("en-US", {
@@ -313,28 +325,29 @@ const OrderHistory = ({ orders }) => (
                 {order.status.toUpperCase()}
               </p>
               <p className="text-lg font-bold tracking-widest mt-1">
-                ₦{order.total.toFixed(2)}
+                ₦{order.totalPrice.toFixed(2)}
               </p>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
             {order.items.map((item) => (
-              <div
-                key={item.product._id}
-                className="flex items-center justify-between"
-              >
+              <div key={item._id} className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <img
+                  {/* Assuming you have a way to get the product image */}
+                  {/* <img
                     src={item.product.images[0]}
-                    alt={item.product.name}
+                    alt={item.name}
                     className="w-16 h-16 object-cover "
-                  />
+                  /> */}
                   <div>
                     <h4 className="font-semibold tracking-wider text-sm">
-                      {item.product.name}
+                      {item.name}
                     </h4>
                     <p className="text-xs tracking-widest text-gray-500">
                       Qty: {item.quantity}
+                    </p>
+                    <p className="text-xs tracking-widest text-gray-500">
+                      Size: {item.size}
                     </p>
                   </div>
                 </div>
@@ -362,32 +375,50 @@ const OrderHistory = ({ orders }) => (
   </div>
 );
 
-const Wishlist = ({ wishlist }) => (
-  <div>
-    <h2 className="text-2xl font-bold tracking-widest mb-6">Wishlist</h2>
-    {wishlist.length > 0 ? (
+const Wishlist = () => {
+  const { wishlist, removeItem, isLoading } = useWishlist();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-black"></div>
+      </div>
+    );
+  }
+
+  if (wishlist && wishlist.length > 0) {
+    return (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {wishlist.map((item) => (
-          <Card key={item._id} className="group relative">
+        {wishlist.map((product) => (
+          <Card key={product._id} className="group relative">
             <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-t-lg bg-gray-200">
               <img
-                src={item.images[0]}
-                alt={item.name}
+                src={product.images?.[0] || "/placeholder.png"}
+                alt={product.name}
                 className="h-full w-full object-cover object-center group-hover:opacity-75"
               />
+              <button
+                onClick={() => removeItem(product._id)}
+                className="absolute top-2 right-2 bg-white rounded-full p-2 text-gray-600 hover:text-red-500 hover:bg-gray-100 transition-all duration-200"
+                aria-label="Remove from wishlist"
+              >
+                <FiX className="w-5 h-5" />
+              </button>
             </div>
             <CardContent>
               <h3 className="font-semibold tracking-widest text-sm">
-                {item.name}
+                {product.name}
               </h3>
               <p className="text-sm font-bold tracking-widest mt-2">
-                ₦{item.price.toFixed(2)}
+                ₦{product.price.toFixed(2)}
               </p>
             </CardContent>
           </Card>
         ))}
       </div>
-    ) : (
+    );
+  } else {
+    return (
       <Card>
         <CardContent className="text-center text-gray-500">
           <FiHeart className="mx-auto h-12 w-12 text-gray-400" />
@@ -399,9 +430,9 @@ const Wishlist = ({ wishlist }) => (
           </p>
         </CardContent>
       </Card>
-    )}
-  </div>
-);
+    );
+  }
+};
 
 const FormInput = (props) => (
   <input

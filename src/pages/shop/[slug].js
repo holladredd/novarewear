@@ -111,7 +111,7 @@ const EditReviewForm = ({ review, onCancel, productId }) => {
 
 const ProductReviews = ({ reviews, productId }) => {
   const { user } = useAuth();
-  const { deleteReview, isDeletingReview } = useProducts();
+  const { deleteReview, isDeletingReview, isLoading } = useProducts();
   const [editingReview, setEditingReview] = useState(null);
 
   const handleDelete = (reviewId) => {
@@ -166,12 +166,12 @@ const ProductReviews = ({ reviews, productId }) => {
                 <div className="flex items-center mb-4">
                   <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center mr-4">
                     <span className="text-xl font-bold text-gray-600">
-                      {review.user?.name?.charAt(0)?.toUpperCase() || "A"}
+                      {review.user?.username?.charAt(0)?.toUpperCase() || "A"}
                     </span>
                   </div>
                   <div>
                     <p className="font-bold text-lg">
-                      {review.user?.name || "Anonymous"}
+                      {review.user?.username || "Anonymous"}
                     </p>
                     <div className="flex mt-1">
                       {[...Array(5)].map((_, i) => (
@@ -191,7 +191,7 @@ const ProductReviews = ({ reviews, productId }) => {
                     </div>
                   </div>
                 </div>
-                {user && user._id === review.user?._id && (
+                {user && user.username === review.user?.username && (
                   <div className="flex gap-4">
                     <button
                       onClick={() => setEditingReview(review)}

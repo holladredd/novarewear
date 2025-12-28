@@ -53,7 +53,11 @@ export const AdminProvider = ({ children }) => {
 
   const updateUser = useMutation({
     mutationFn: async ({ id, updatedData }) => {
-      const { data } = await api.put(`/admin/users/${id}`, updatedData);
+      const { data } = await api.put(`/admin/users/${id}`, updatedData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
       return data;
     },
     onSuccess: (_, { id }) => {
@@ -109,7 +113,11 @@ export const AdminProvider = ({ children }) => {
 
   const updateProduct = useMutation({
     mutationFn: async ({ id, updatedData }) => {
-      const { data } = await api.put(`/admin/products/${id}`, updatedData);
+      const { data } = await api.put(`/admin/products/${id}`, updatedData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
       return data;
     },
     onSuccess: (_, { id }) => {

@@ -359,6 +359,7 @@ export default function ProductPage() {
   const { addItem, isAddingItem } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState(null);
+  const [activeImage, setActiveImage] = useState(0);
 
   const {
     data: product,
@@ -402,17 +403,36 @@ export default function ProductPage() {
     setSelectedSize(size);
   };
 
+  const handleImageSelect = (index) => {
+    setActiveImage(index);
+  };
+
   return (
     <div className="min-h-screen bg-white text-black">
       <Navbar />
       <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-16">
         <div className="grid md:grid-cols-2 gap-8">
           <div>
-            <img
-              src={product.images?.[0]?.url || "/placeholder.png"}
-              alt={product.name}
-              className="w-full h-auto object-cover rounded-lg"
-            />
+            <div className="mb-4">
+              <img
+                src={product.images?.[activeImage]?.url || "/placeholder.png"}
+                alt={product.name}
+                className="w-full h-auto object-cover rounded-lg"
+              />
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              {product.images?.map((image, index) => (
+                <img
+                  key={image.public_id}
+                  src={image.url}
+                  alt={`${product.name} thumbnail ${index + 1}`}
+                  onClick={() => handleImageSelect(index)}
+                  className={`w-full h-auto object-cover rounded-md cursor-pointer ${
+                    activeImage === index ? "border-2 border-black" : ""
+                  }`}
+                />
+              ))}
+            </div>
           </div>
           <div>
             <h1 className="text-3xl font-bold tracking-widest mb-4">

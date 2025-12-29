@@ -35,31 +35,32 @@ const processQueue = (error, token = null) => {
 };
 
 // Attach current access token header from cookies if present
+// lib/api.js
 api.interceptors.request.use(
   (config) => {
-    try {
-      // authToken is stored in cookie per your AuthContext
-      const token = Cookies.get("authToken");
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      // Ensure trailing slash on relative path calls (simple guard)
-      if (
-        config.url &&
-        !config.url.startsWith("http") &&
-        !config.url.endsWith("/") &&
-        !config.url.includes("?")
-      ) {
-        config.url = config.url + "/";
-      }
-    } catch (e) {
-      // ignore
+    const token = Cookies.get("authToken");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    // ✅ CRITICAL: Remove Content-Type for FormData
+    if (config.data instanceof FormData) {
+      delete config.headers["Content-Type"];
+    }
+
+    // Ensure trailing slash
+    if (
+      config.url &&
+      !config.url.startsWith("http") &&
+      !config.url.endsWith("/") &&
+      !config.url.includes("?")
+    ) {
+      config.url = config.url + "/";
     }
     return config;
   },
   (error) => Promise.reject(error)
 );
-
 // Response interceptor -> handle errors
 api.interceptors.response.use(
   (response) => response,

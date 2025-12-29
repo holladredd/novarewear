@@ -113,11 +113,14 @@ export const AdminProvider = ({ children }) => {
 
   const updateProduct = useMutation({
     mutationFn: async ({ id, updatedData }) => {
-      const { data } = await api.put(`/admin/products/${id}`, updatedData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      // Log FormData for debugging
+      console.log("Sending FormData:");
+      for (let [key, value] of updatedData.entries()) {
+        console.log(`${key}:`, value);
+      }
+
+      // ✅ CORRECT: No manual headers
+      const { data } = await api.put(`/admin/products/${id}`, updatedData);
       return data;
     },
     onSuccess: (_, { id }) => {

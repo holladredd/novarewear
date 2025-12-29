@@ -12,6 +12,7 @@ import {
   FaSave,
 } from "react-icons/fa";
 import Swal from "sweetalert2";
+import Cookies from "js-cookie";
 
 const ProductDetailPage = () => {
   const router = useRouter();
@@ -38,7 +39,15 @@ const ProductDetailPage = () => {
   ];
 
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({});
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    price: "",
+    category: "",
+    inStock: "",
+    gender: "",
+    isFeatured: false,
+  });
   const [sizes, setSizes] = useState([]);
   const [colors, setColors] = useState([]);
   const [details, setDetails] = useState([]);
@@ -137,26 +146,112 @@ const ProductDetailPage = () => {
     }
   };
 
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   if (!product?._id) {
+  //     Swal.fire({
+  //       icon: "error",
+  //       title: "Cannot Update",
+  //       text: "Product ID is missing. Please refresh the page.",
+  //     });
+  //     return;
+  //   }
+
+  //   if (!formData.category) {
+  //     Swal.fire({
+  //       icon: "error",
+  //       title: "Validation Error",
+  //       text: "A category must be selected.",
+  //     });
+  //     return;
+  //   }
+
+  //   Swal.fire({
+  //     title: "Updating Product...",
+  //     text: "Please wait while we save the changes.",
+  //     allowOutsideClick: false,
+  //     didOpen: () => {
+  //       Swal.showLoading();
+  //     },
+  //   });
+
+  //   try {
+  //     const payload = new FormData();
+
+  //     // Append simple form data fields directly
+  //     payload.append("name", formData.name);
+  //     payload.append("description", formData.description);
+  //     payload.append("price", formData.price);
+  //     payload.append("inStock", formData.inStock);
+  //     payload.append("gender", formData.gender);
+  //     payload.append("isFeatured", formData.isFeatured);
+
+  //     // Filter and append stringified arrays for complex fields
+  //     // In handleSubmit, ensure sizes is always a valid array
+  //     const validSizes = sizes.filter((s) => s && String(s).trim() !== "");
+  //     payload.append("sizes", JSON.stringify(validSizes)); // Must be array
+
+  //     // Send category as plain string (not JSON)
+  //     payload.append("category", formData.category); // "Tees", "Hoodies", etc.
+
+  //     const validColors = colors.filter(
+  //       (c) => c && c.name && c.name.trim() !== "" && c.hex
+  //     );
+  //     payload.append("colors", JSON.stringify(validColors));
+
+  //     const validDetails = details.filter((d) => d && d.trim() !== "");
+  //     payload.append("details", JSON.stringify(validDetails));
+
+  //     // Append existing image public_ids
+  //     const retainedImageIds = existingImages
+  //       .map((img) => img.public_id)
+  //       .filter(Boolean);
+  //     payload.append("existingImages", JSON.stringify(retainedImageIds));
+
+  //     const retainedLookImageIds = existingLookImages
+  //       .map((img) => img.public_id)
+  //       .filter(Boolean);
+  //     payload.append(
+  //       "existingLookImages",
+  //       JSON.stringify(retainedLookImageIds)
+  //     );
+
+  //     // Append new image files
+  //     newImages.forEach((file) => {
+  //       payload.append("images", file);
+  //     });
+
+  //     newLookImages.forEach((file) => {
+  //       payload.append("lookImages", file);
+  //     });
+
+  //     await updateProduct.mutateAsync({
+  //       id: product._id,
+  //       productData: payload,
+  //     });
+
+  //     Swal.fire({
+  //       icon: "success",
+  //       title: "Product Updated!",
+  //       text: "The product has been successfully updated.",
+  //     });
+  //     setIsEditing(false);
+  //   } catch (err) {
+  //     const errorMessage =
+  //       err.response?.data?.error ||
+  //       err.message ||
+  //       "An unexpected error occurred.";
+  //     Swal.fire({
+  //       icon: "error",
+  //       title: "Update Failed",
+  //       text: errorMessage,
+  //     });
+  //   }
+  // };
+
+  // [_id].js - handleSubmit
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!product?._id) {
-      Swal.fire({
-        icon: "error",
-        title: "Cannot Update",
-        text: "Product ID is missing. Please refresh the page.",
-      });
-      return;
-    }
-
-    if (!formData.category) {
-      Swal.fire({
-        icon: "error",
-        title: "Validation Error",
-        text: "A category must be selected.",
-      });
-      return;
-    }
-
     Swal.fire({
       title: "Updating Product...",
       text: "Please wait while we save the changes.",
@@ -165,62 +260,31 @@ const ProductDetailPage = () => {
         Swal.showLoading();
       },
     });
+    const payload = new FormData();
+    payload.append("name", formData.name);
+    payload.append("price", formData.price);
+    payload.append("category", formData.category);
+    payload.append("inStock", formData.inStock);
+    payload.append("description", formData.description);
+    payload.append("sizes", JSON.stringify(sizes));
+    payload.append("isFeatured", formData.isFeatured);
 
-    try {
-      const payload = new FormData();
+    // ✅ LOG FILES BEFORE SENDING
+    console.log("Selected images:", newImages.length);
+    console.log("Selected lookImages:", newLookImages.length);
 
-      Object.keys(formData).forEach((key) => {
-        payload.append(key, JSON.stringify(formData[key]));
-      });
+    newImages.forEach((file, i) => {
+      console.log(`Image ${i}:`, file.name, file.size);
+      payload.append("images", file);
+    });
 
-      payload.append("sizes", JSON.stringify(sizes));
-      payload.append("colors", JSON.stringify(colors));
-      payload.append("details", JSON.stringify(details));
+    newLookImages.forEach((file, i) => {
+      console.log(`LookImage ${i}:`, file.name, file.size);
+      payload.append("lookImages", file);
+    });
 
-      // Append existing image public_ids
-      const retainedImageIds = existingImages.map((img) => img.public_id);
-      payload.append("existingImages", JSON.stringify(retainedImageIds));
-
-      const retainedLookImageIds = existingLookImages.map(
-        (img) => img.public_id
-      );
-      payload.append(
-        "existingLookImages",
-        JSON.stringify(retainedLookImageIds)
-      );
-
-      newImages.forEach((file) => {
-        payload.append("images", file);
-      });
-
-      newLookImages.forEach((file) => {
-        payload.append("lookImages", file);
-      });
-
-      await updateProduct.mutateAsync({
-        id: product._id,
-        updatedData: payload,
-      });
-
-      Swal.fire({
-        icon: "success",
-        title: "Product Updated!",
-        text: "The product has been successfully updated.",
-      });
-      setIsEditing(false);
-    } catch (err) {
-      const errorMessage =
-        err.response?.data?.error ||
-        err.message ||
-        "An unexpected error occurred.";
-      Swal.fire({
-        icon: "error",
-        title: "Update Failed",
-        text: errorMessage,
-      });
-    }
+    await updateProduct.mutateAsync({ id: product._id, updatedData: payload });
   };
-
   const handleDelete = () => {
     if (!product?._id) {
       Swal.fire({

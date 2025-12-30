@@ -79,7 +79,15 @@ const FilterControls = ({
   sort,
   handleSortChange,
 }) => {
-  const categories = ["All", "Tees", "Hoodies", "Pants", "Accessories"];
+  const categories = [
+    "All",
+    "Tees",
+    "Hoodies",
+    "Pants",
+    "Accessories",
+    "Jackets",
+    "Shorts",
+  ];
 
   const sizes = ["S", "M", "L", "XL"];
   const sortOptions = [
